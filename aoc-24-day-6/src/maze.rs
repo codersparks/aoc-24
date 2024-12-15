@@ -1,7 +1,10 @@
 use crate::guard::{Direction, Guard};
 use ndarray::Array2;
 use std::fmt::Display;
-
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::symbols::border;
+use ratatui::widgets::{Block, Paragraph, Widget};
 
 #[derive(Debug, Default)]
 pub enum MazeCell {
@@ -19,6 +22,22 @@ impl MazeCell {
             MazeCell::Obstacle => { '#' }
             MazeCell::Visited => { 'X' }
         }
+    }
+}
+
+
+impl Widget for MazeCell {
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized
+    {
+        let block = Block::bordered()
+            .border_set(border::THICK);
+
+        Paragraph::new(self.to_string())
+            .centered()
+            .block(block)
+            .render(area, buf);
     }
 }
 
@@ -81,6 +100,16 @@ impl Maze {
 
     }
 }
+
+impl Widget for Maze {
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized
+    {
+        todo!()
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

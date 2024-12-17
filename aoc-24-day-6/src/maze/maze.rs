@@ -11,7 +11,6 @@ pub struct Maze {
 impl Maze {
     pub fn from_str(input: &str) -> Maze {
         // Trim in case it has spurious new line
-
         // To form the array2 we need to calculate the row and colum lengths
         let input = input.trim();
         let row_count = input.lines().count();
@@ -40,13 +39,14 @@ impl Maze {
 
                     if guard.is_none() {
                         let g = Guard::new(Direction::from_char(c), row, col);
+                        maze_map[[row,col]] = MazeCell::Guard(*g.get_direction());
                         guard = Some(g);
                     } else {
                         // This should be unreachable as there should only be one guard on a map
                         unreachable!()
                     }
 
-                    maze_map[[row,col]] = MazeCell::Visited;
+
                 },
                 _ => { unreachable!(); }
             }

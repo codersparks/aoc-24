@@ -116,57 +116,7 @@ impl WidgetRef for Maze {
                     width: cell_size as u16,
                     height: cell_size as u16,
                 };
-                cell.clone().render(cell_area, buf);
-            }
-        }
-    }
-}
-impl Widget for &mut Maze {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let map_height = self.map.shape()[0];
-        let map_width = self.map.shape()[1];
-        let cell_size = 3; // Each cell is 3x3
-
-        // Maximum number of cells that can fit in the terminal area
-        let max_visible_rows = (area.height as usize) / cell_size;
-        let max_visible_cols = (area.width as usize) / cell_size;
-
-        // Guard's current position
-        let guard_pos = self.guard.get_position();
-        let guard_row = guard_pos.row;
-        let guard_col = guard_pos.col;
-
-        // Calculate the visible region centered on the guard
-        let visible_rows = min(max_visible_rows, map_height);
-        let visible_cols = min(max_visible_cols, map_width);
-
-        let row_start = max(0, guard_row as isize - (visible_rows as isize / 2)) as usize;
-        let col_start = max(0, guard_col as isize - (visible_cols as isize / 2)) as usize;
-
-        let row_end = min(map_height, row_start + visible_rows);
-        let col_end = min(map_width, col_start + visible_cols);
-
-        // Center the visible region in the terminal area
-        let grid_height = (row_end - row_start) * cell_size;
-        let grid_width = (col_end - col_start) * cell_size;
-
-        let y_offset = area.y + ((area.height as usize - grid_height) / 2) as u16;
-        let x_offset = area.x + ((area.width as usize - grid_width) / 2) as u16;
-
-        // Render the visible region of the maze
-        for (row_idx, map_row) in self.map.slice(s![row_start..row_end, col_start..col_end]).outer_iter().enumerate() {
-            for (col_idx, cell) in map_row.iter().enumerate() {
-                let y = y_offset + (row_idx * cell_size) as u16;
-                let x = x_offset + (col_idx * cell_size) as u16;
-
-                // Use the `MazeCell::render` function to render each cell
-                let cell_area = Rect {
-                    x,
-                    y,
-                    width: cell_size as u16,
-                    height: cell_size as u16,
-                };
-                cell.clone().render(cell_area, buf);
+                cell.render(cell_area, buf);
             }
         }
     }

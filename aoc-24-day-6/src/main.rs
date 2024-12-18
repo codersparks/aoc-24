@@ -6,6 +6,7 @@ use aoc_24_day_6::maze::Maze;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input = read_to_string("aoc-24-day-6/test_input/day6.txt").unwrap();
+    //let input = read_to_string("aoc-24-day-6/input/day6.txt").unwrap();
     let maze = &Maze::from_str(&input);
 
     println!("Maze: {:#?}", maze);

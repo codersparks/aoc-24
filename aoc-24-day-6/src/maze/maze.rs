@@ -2,8 +2,9 @@ use std::cmp::{max, min};
 use ndarray::{s, Array2};
 use ratatui::buffer::Buffer;
 use ratatui::Frame;
-use ratatui::layout::Rect;
-use ratatui::widgets::{Widget, WidgetRef};
+use ratatui::layout::{Layout, Rect};
+use ratatui::style::{Style, Color};
+use ratatui::widgets::{Block, Borders, Paragraph, Widget, WidgetRef};
 use crate::guard::{Direction, Guard};
 use crate::maze::maze_cell::MazeCell;
 
@@ -69,6 +70,10 @@ impl Maze {
     pub fn draw(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area())
     }
+
+    fn create_constraints(n: usize, cell_size: usize) -> Vec<ratatui::layout::Constraint> {
+        (0..n).map(|_| ratatui::layout::Constraint::Length(cell_size as u16)).collect()
+    }
 }
 
 impl WidgetRef for Maze {
@@ -96,30 +101,41 @@ impl WidgetRef for Maze {
         let row_end = min(map_height, row_start + visible_rows);
         let col_end = min(map_width, col_start + visible_cols);
 
-        // Center the visible region in the terminal area
-        let grid_height = (row_end - row_start) * cell_size;
-        let grid_width = (col_end - col_start) * cell_size;
+        let row_constraints = Self::create_constraints(row_end - row_start, cell_size);
 
-        let y_offset = area.y + ((area.height as usize - grid_height) / 2) as u16;
-        let x_offset = area.x + ((area.width as usize - grid_width) / 2) as u16;
 
-        // Render the visible region of the maze
-        for (row_idx, map_row) in self.map.slice(s![row_start..row_end, col_start..col_end]).outer_iter().enumerate() {
-            for (col_idx, cell) in map_row.iter().enumerate() {
-                let y = y_offset + (row_idx * cell_size) as u16;
-                let x = x_offset + (col_idx * cell_size) as u16;
+        let rows = Layout::default().direction(ratatui::layout::Direction::Vertical)
+            .constraints(row_constraints).split(area);
 
-                // Use the `MazeCell::render` function to render each cell
-                let cell_area = Rect {
-                    x,
-                    y,
-                    width: cell_size as u16,
-                    height: cell_size as u16,
+
+        let visible_map = self.map.slice(s![row_start..row_end, col_start..col_end]);
+
+        for (row_idx, grid_row) in rows.iter().enumerate() {
+            let col_constraints = Self::create_constraints(col_end - col_start, cell_size);
+            let cols = Layout::default().direction(ratatui::layout::Direction::Horizontal)
+                .constraints(col_constraints).split(*grid_row);
+
+            for (col_idx, cell) in cols.iter().enumerate() {
+
+                let block = Block::default().borders(Borders::ALL);
+
+                let style = match visible_map[[row_idx, col_idx]] {
+                    MazeCell::Empty => { Style::default() }
+                    MazeCell::Obstacle => { Style::default().fg(Color::Red)}
+                    MazeCell::Guard(_) => { Style::default().bg(Color::White).fg(Color::Black)}
+                    MazeCell::Visited => {Style::default().bg(Color::Blue)}
                 };
-                cell.render(cell_area, buf);
+
+                let representation = format!("{}", visible_map[[row_idx, col_idx]].representation());
+                let paragraph = Paragraph::new(representation).style(style)
+                    .block(block).centered();
+                paragraph.render(*cell, buf);
+
             }
         }
     }
+
+
 }
 
 #[cfg(test)]

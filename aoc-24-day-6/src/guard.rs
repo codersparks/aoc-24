@@ -31,8 +31,8 @@ impl Direction {
 #[derive(Debug)]
 pub struct GuardLocation {
     direction: Direction,
-    row: usize,
-    col: usize,
+    pub(crate) row: usize,
+    pub(crate) col: usize,
 }
 
 impl GuardLocation {
@@ -60,7 +60,9 @@ impl Guard {
         &self.position.direction
     }
 
-
+    pub fn get_position(&self) -> &GuardLocation {
+        &self.position
+    }
 }
 
 

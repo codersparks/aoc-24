@@ -14,11 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut terminal = ratatui::init();
 
-    let area = terminal.get_frame().area();
     let visualiser = GridVisualiser::new(3, 3);
-
-
-
     loop {
         terminal.draw(|f| {
 

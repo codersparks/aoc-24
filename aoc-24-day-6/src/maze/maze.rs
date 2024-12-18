@@ -1,12 +1,8 @@
-use std::cmp::{max, min};
-use ndarray::{s, Array2};
-use ratatui::buffer::Buffer;
-use ratatui::Frame;
-use ratatui::layout::{Layout, Rect};
-use ratatui::style::{Style, Color};
-use ratatui::widgets::{Block, Borders, Paragraph, Widget, WidgetRef};
 use crate::guard::{Direction, Guard};
 use crate::maze::maze_cell::MazeCell;
+use ndarray::{s, Array2, ArrayView2};
+use ratatui::widgets::{Widget};
+use std::cmp::{max, min};
 
 #[derive(Debug)]
 pub struct Maze {
@@ -67,72 +63,28 @@ impl Maze {
 
     }
 
-    pub fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area())
-    }
+    pub fn to_view_sized(&self, rows: usize, cols: usize) -> ArrayView2<MazeCell> {
 
-    fn create_constraints(n: usize, cell_size: usize) -> Vec<ratatui::layout::Constraint> {
-        (0..n).map(|_| ratatui::layout::Constraint::Length(cell_size as u16)).collect()
-    }
-}
-
-impl WidgetRef for Maze {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let map_height = self.map.shape()[0];
         let map_width = self.map.shape()[1];
-        let cell_size = 3; // Each cell is 3x3
 
-        // Maximum number of cells that can fit in the terminal area
-        let max_visible_rows = (area.height as usize) / cell_size;
-        let max_visible_cols = (area.width as usize) / cell_size;
+        // If the max rows and columns are equal to the height and width we just return the entire view
+        if rows >= map_height && cols >= map_width {
+            return self.map.view();
+        }
 
         // Guard's current position
         let guard_pos = self.guard.get_position();
         let guard_row = guard_pos.row;
         let guard_col = guard_pos.col;
 
-        // Calculate the visible region centered on the guard
-        let visible_rows = min(max_visible_rows, map_height);
-        let visible_cols = min(max_visible_cols, map_width);
+        let row_start = max(0, guard_row as isize - (rows as isize / 2)) as usize;
+        let col_start = max(0, guard_col as isize - (cols as isize / 2)) as usize;
 
-        let row_start = max(0, guard_row as isize - (visible_rows as isize / 2)) as usize;
-        let col_start = max(0, guard_col as isize - (visible_cols as isize / 2)) as usize;
+        let row_end = min(map_height, row_start + rows);
+        let col_end = min(map_width, col_start + cols);
 
-        let row_end = min(map_height, row_start + visible_rows);
-        let col_end = min(map_width, col_start + visible_cols);
-
-        let row_constraints = Self::create_constraints(row_end - row_start, cell_size);
-
-
-        let rows = Layout::default().direction(ratatui::layout::Direction::Vertical)
-            .constraints(row_constraints).split(area);
-
-
-        let visible_map = self.map.slice(s![row_start..row_end, col_start..col_end]);
-
-        for (row_idx, grid_row) in rows.iter().enumerate() {
-            let col_constraints = Self::create_constraints(col_end - col_start, cell_size);
-            let cols = Layout::default().direction(ratatui::layout::Direction::Horizontal)
-                .constraints(col_constraints).split(*grid_row);
-
-            for (col_idx, cell) in cols.iter().enumerate() {
-
-                let block = Block::default().borders(Borders::ALL);
-
-                let style = match visible_map[[row_idx, col_idx]] {
-                    MazeCell::Empty => { Style::default() }
-                    MazeCell::Obstacle => { Style::default().fg(Color::Red)}
-                    MazeCell::Guard(_) => { Style::default().bg(Color::White).fg(Color::Black)}
-                    MazeCell::Visited => {Style::default().bg(Color::Blue)}
-                };
-
-                let representation = format!("{}", visible_map[[row_idx, col_idx]].representation());
-                let paragraph = Paragraph::new(representation).style(style)
-                    .block(block).centered();
-                paragraph.render(*cell, buf);
-
-            }
-        }
+        self.map.slice(s![row_start..row_end, col_start..col_end])
     }
 
 

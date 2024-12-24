@@ -87,6 +87,14 @@ impl Maze {
         self.map.slice(s![row_start..row_end, col_start..col_end])
     }
 
+    pub fn get_height(&self) -> usize {
+        self.map.shape()[1]
+    }
+
+    pub fn get_width(&self) -> usize {
+        self.map.shape()[0]
+    }
+
 
 }
 

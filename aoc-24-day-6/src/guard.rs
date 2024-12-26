@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Direction {
     Up,
@@ -28,9 +30,9 @@ impl Direction {
         }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GuardLocation {
-    direction: Direction,
+    pub(crate) direction: Direction,
     pub(crate) row: usize,
     pub(crate) col: usize,
 }
@@ -65,6 +67,31 @@ impl Guard {
     }
 
     pub fn get_history(&self) -> &Vec<GuardLocation> { &self.history }
+
+    pub fn get_unique_history_count(&self) -> usize {
+        self.history.iter().map(|l| (l.row, l.col)).collect::<HashSet<(usize,usize)>>().len()
+    }
+
+    pub fn update_history_with_current_position(&mut self) {
+        self.history.push(self.position.clone());
+    }
+
+    pub fn change_direction(&mut self) {
+
+        let new_direction = match self.position.direction {
+            Direction::Up => { Direction::Right }
+            Direction::Down => { Direction::Left }
+            Direction::Left => { Direction::Up }
+            Direction::Right => { Direction::Down }
+        };
+
+        self.position.direction = new_direction;
+    }
+
+    pub fn update_position(&mut self, row: usize, col: usize) {
+        self.position.row = row;
+        self.position.col = col;
+    }
 }
 
 

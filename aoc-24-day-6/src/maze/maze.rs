@@ -2,6 +2,7 @@ use crate::guard::{Direction, Guard};
 use crate::maze::maze_cell::MazeCell;
 use ndarray::{s, Array2, ArrayView2};
 use std::cmp::{max, min};
+use tracing::{debug, info};
 
 #[derive(Debug)]
 pub struct Maze {
@@ -96,6 +97,75 @@ impl Maze {
 
     pub fn get_guard(&self) -> &Guard {
         &self.guard
+    }
+
+    pub fn move_guard(&mut self) -> bool {
+
+        info!("Moving guard");
+
+        let starting_guard_location = self.guard.get_position().clone();
+
+        let starting_row = starting_guard_location.row;
+        let starting_col = starting_guard_location.col;
+        let starting_direction = starting_guard_location.direction;
+
+        debug!("Starting row: {}, starting col: {}, starting direction: {:#?}", starting_row, starting_col, starting_direction);
+
+        // Plane of travel is the row/col that the guard will be moving in e.g if facing upwards it will be a col
+        // direction mod will be if the guard moves in a positive or negative direction in the row/col
+        let (plane_of_travel, position, direction_mod) = match starting_direction {
+            Direction::Up =>    { (self.map.column(starting_col), starting_row, -1)  }
+            Direction::Down =>  { (self.map.column(starting_col), starting_row, 1) }
+            Direction::Left =>  { (self.map.row(starting_row), starting_col, -1) }
+            Direction::Right => { (self.map.row(starting_row), starting_col, 1) }
+        };
+
+        debug!("Plane of travel: {:#?}", plane_of_travel);
+
+        let new_position = position as isize + direction_mod;
+        debug!("Position: {}, new position: {}", position, new_position);
+
+        if new_position < 0 || new_position >= plane_of_travel.len() as isize {
+            self.guard.update_history_with_current_position();
+            self.map[[starting_row, starting_col]] = MazeCell::Visited;
+            info!("Guard has reached the end of the maze");
+            info!("Visited Cell Count: {}", self.guard.get_unique_history_count());
+            return true
+        }
+
+        match plane_of_travel[new_position as usize] {
+            MazeCell::Obstacle => {
+                info!("Guard has hit an obstacle, location {}", new_position);
+                self.guard.change_direction();
+                self.map[[starting_row, starting_col]] = MazeCell::Guard(*self.guard.get_direction());
+                debug!("Visited Cell Count: {}", self.guard.get_unique_history_count());
+
+            },
+            MazeCell::Empty | MazeCell::Visited => {
+                info!("Guard can move to empty cell, location {}", new_position);
+                let (new_row, new_col) = match starting_direction {
+                    Direction::Up => {(new_position as usize, starting_col)}
+                    Direction::Down => {(new_position as usize, starting_col)}
+                    Direction::Left => {(starting_row, new_position as usize)}
+                    Direction::Right => {(starting_row, new_position as usize)}
+                };
+
+                debug!("New row: {}, new col: {}", new_row, new_col);
+
+                self.map[[starting_row, starting_col]] = MazeCell::Visited;
+                self.guard.update_history_with_current_position();
+                self.guard.update_position(new_row, new_col);
+                self.map[[new_row, new_col]] = MazeCell::Guard(*self.guard.get_direction());
+                debug!("Visited Cell Count: {}", self.guard.get_unique_history_count());
+
+            },
+            _ => {unreachable!()}
+        }
+
+        false
+
+
+
     }
 
 

@@ -1,7 +1,6 @@
 use crate::guard::{Direction, Guard};
 use crate::maze::maze_cell::MazeCell;
 use ndarray::{s, Array2, ArrayView2};
-use ratatui::widgets::{Widget};
 use std::cmp::{max, min};
 
 #[derive(Debug)]
@@ -63,14 +62,14 @@ impl Maze {
 
     }
 
-    pub fn to_view_sized(&self, rows: usize, cols: usize) -> ArrayView2<MazeCell> {
+    pub fn to_view_sized(&self, rows: usize, cols: usize) -> (ArrayView2<MazeCell>, usize, usize) {
 
         let map_height = self.map.shape()[0];
         let map_width = self.map.shape()[1];
 
         // If the max rows and columns are equal to the height and width we just return the entire view
         if rows >= map_height && cols >= map_width {
-            return self.map.view();
+            return (self.map.view(), 0, 0);
         }
 
         // Guard's current position
@@ -84,7 +83,7 @@ impl Maze {
         let row_end = min(map_height, row_start + rows);
         let col_end = min(map_width, col_start + cols);
 
-        self.map.slice(s![row_start..row_end, col_start..col_end])
+        (self.map.slice(s![row_start..row_end, col_start..col_end]), row_start, col_start)
     }
 
     pub fn get_height(&self) -> usize {
@@ -93,6 +92,10 @@ impl Maze {
 
     pub fn get_width(&self) -> usize {
         self.map.shape()[0]
+    }
+
+    pub fn get_guard(&self) -> &Guard {
+        &self.guard
     }
 
 

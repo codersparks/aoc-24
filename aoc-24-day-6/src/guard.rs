@@ -63,6 +63,8 @@ impl Guard {
     pub fn get_position(&self) -> &GuardLocation {
         &self.position
     }
+
+    pub fn get_history(&self) -> &Vec<GuardLocation> { &self.history }
 }
 
 

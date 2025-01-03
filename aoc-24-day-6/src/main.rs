@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::fs::{read_to_string, OpenOptions};
 use std::path::PathBuf;
 use aoc_visualisation::grid::GridVisualiser;
@@ -9,6 +10,7 @@ use ratatui::crossterm::event::Event;
 use tracing::{debug, info, Level};
 use tracing_subscriber::{filter, Layer, Registry};
 use tracing_subscriber::layer::SubscriberExt;
+use aoc_24_day_6::guard::Direction;
 use aoc_24_day_6::maze::Maze;
 use aoc_24_day_6::maze::maze_cell::MazeCell;
 
@@ -125,8 +127,64 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let guard = maze.get_guard();
 
+    println!("####### Part 1 #######");
     println!("Guard position:       {:?}", guard.get_position());
     println!("Guard direction:      {:?}", guard.get_direction());
     println!("Visited Cell Count:   {:?}", guard.get_unique_history_count());
+
+
+    println!("####### Part 2 #######");
+
+    let history = guard.get_history();
+
+    let change_in_directions = history.windows(2).filter(|w| {
+        w[0].get_direction() != w[1].get_direction()
+    }).map(|pair| &pair[1]).collect::<Vec<_>>();
+
+    debug!("Change in directions: {:#?}", change_in_directions);
+
+    // so we take a window of size 3 to see if it makes up the 3 sides of the rectangle, with the potential added obstacle making the 4th point
+    let new_obstacles = change_in_directions.windows(3).filter(|w| {
+        // If the turnst are not in sequance then we can ignore this window
+        match w[0].get_direction() {
+            Direction::Up => {
+                if ! matches!(w[1].get_direction(), Direction::Right) && ! matches!(w[1].get_direction(), Direction::Down) { return false; }
+            }
+            Direction::Down => {
+                if ! matches!(w[1].get_direction(), Direction::Left) && ! matches!(w[1].get_direction(), Direction::Up) { return false; }
+            }
+            Direction::Left => {
+                if ! matches!(w[1].get_direction(), Direction::Up) && ! matches!(w[1].get_direction(), Direction::Right) { return false; }
+            }
+            Direction::Right => {
+                if ! matches!(w[1].get_direction(), Direction::Down) && ! matches!(w[1].get_direction(), Direction::Left) { return false; }
+            }
+        }
+        true
+    }).map(|w| {
+        // If we get here then we know that we have the three sides of a loop
+        // We know the co-ord that has to change for the added obstacle as we know the direction from the start point
+        // (the direction from w0 is tha same direction as w1 -> w2)
+        // We know that only one of row and column can change at the same time (due to being rectange)
+        // We therefore can take the max of the absolute change in either dimension on the journey w1 -> w2
+
+        let w1_pos = w[1].get_position();
+        let w2_pos = w[2].get_position();
+
+        // Get magnitude, we have to convert to isize as we may be going negative
+        let magnitude = max((w2_pos.0 as isize - w1_pos.0 as isize).abs(),( w2_pos.1 as isize - w1_pos.1 as isize).abs()) as usize;
+
+        match w[1].get_direction() {
+            Direction::Up => { (w1_pos.0, w1_pos.1 - magnitude - 1) }
+            Direction::Down => { (w1_pos.0, w1_pos.1 + magnitude + 1) }
+            Direction::Left => { (w1_pos.0 - magnitude - 1, w1_pos.1) }
+            Direction::Right => { (w1_pos.0 + magnitude + 1, w1_pos.1) }
+        }
+    }).collect::<Vec<(usize, usize)>>();
+
+    println!("New obstacles: {:#?}", new_obstacles);
+    println!("New obstacles count: {}", new_obstacles.len());
+
+
     Ok(())
 }

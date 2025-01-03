@@ -137,6 +137,7 @@ impl Maze {
             MazeCell::Obstacle => {
                 info!("Guard has hit an obstacle, location {}", new_position);
                 self.guard.change_direction();
+                self.guard.update_history_with_current_position();
                 self.map[[starting_row, starting_col]] = MazeCell::Guard(*self.guard.get_direction());
                 debug!("Visited Cell Count: {}", self.guard.get_unique_history_count());
 
@@ -161,6 +162,8 @@ impl Maze {
             },
             _ => {unreachable!()}
         }
+
+        debug!("Guard position: {:?}", self.guard.get_position());
 
         false
 

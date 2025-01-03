@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Direction {
     Up,
     Down,
@@ -28,6 +28,15 @@ impl Direction {
                 Direction::Right => { '>' }
             }
         }
+
+    pub fn get_inverse(&self) -> Direction {
+        match self {
+            Direction::Up => { Direction::Down }
+            Direction::Down => { Direction::Up }
+            Direction::Left => { Direction::Right }
+            Direction::Right => { Direction::Left }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -40,6 +49,14 @@ pub struct GuardLocation {
 impl GuardLocation {
     pub fn new(direction: Direction, row: usize, col: usize) -> GuardLocation {
         Self { direction, row, col }
+    }
+
+    pub fn get_direction(&self) -> Direction {
+        self.direction
+    }
+
+    pub fn get_position(&self) -> (usize, usize) {
+        (self.row, self.col)
     }
 }
 
